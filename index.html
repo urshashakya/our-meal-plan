@@ -655,9 +655,9 @@ color: var(--sage);
 <script>
 const SUPABASE_URL = 'https://zobmatdffodiaiddqxfb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvYm1hdGRmZm9kaWFpZGRxeGZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjM2NjIsImV4cCI6MjA5NDQ5OTY2Mn0.9aTXge-bl6PCve_0-DdCMktT_4T203uuvfmnbnyplhU';
-let supabase = null;
+let sbClient = null;
 try {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 } catch (e) {
   console.warn('Supabase failed to initialize:', e);
 }
@@ -739,12 +739,12 @@ const SAMPLE_WEEK = [
 
 // ---- AUTH ----
 async function initAuth() {
-  if (!supabase) {
+  if (!sbClient) {
     document.getElementById('authStatus').textContent = 'Not signed in';
     document.getElementById('authBtn').textContent = 'Sign In';
     return;
   }
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await sbClient.auth.getUser();
   currentUser = user;
   updateAuthUI();
   if (user) {
@@ -765,18 +765,18 @@ function updateAuthUI() {
 }
 
 async function handleAuth() {
-  if (!supabase) {
+  if (!sbClient) {
     alert('Sign in is not available. Please check your connection.');
     return;
   }
   if (currentUser) {
-    await supabase.auth.signOut();
+    await sbClient.auth.signOut();
     currentUser = null;
     updateAuthUI();
   } else {
     const email = prompt('Enter your email:');
     if (!email) return;
-    const { error } = await supabase.auth.signInWithOtp({ email });
+    const { error } = await sbClient.auth.signInWithOtp({ email });
     if (error) {
       alert('Error: ' + error.message);
     } else {
@@ -929,7 +929,7 @@ async function saveData() {
     try {
       for (const day of DAYS) {
         const dayData = plan[day];
-        const { error } = await supabase
+        const { error } = await sbClient
           .from('meal_plans')
           .upsert({
             user_id: currentUser.id,
@@ -964,7 +964,7 @@ async function loadData() {
   if (!currentUser) return;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await sbClient
       .from('meal_plans')
       .select('*')
       .eq('user_id', currentUser.id);
