@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Weekly Meal Planner 🌿</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sage: #7a9e7e;
+    --sage-light: #b5ceb8;
+    --sage-pale: #eef4ef;
+    --cream: #faf8f3;
+    --warm: #f0ebe0;
+    --clay: #c4855a;
+    --clay-light: #f2ddd0;
+    --ink: #2c2c2c;
+    --mid: #6b6b6b;
+    --border: #dde8de;
+    --white: #ffffff;
+    --tick: #4a8a50;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+/* HEADER */
+header {
+background: linear-gradient(135deg, #3d6b42 0%, #5a8f60 60%, #7ab87f 100%);
+color: white;
+padding: 28px 20px 24px;
+text-align: center;
+position: relative;
+overflow: hidden;
+}
+header::before {
+content: '';
+position: absolute;
+top: -40px; right: -40px;
+width: 160px; height: 160px;
+background: rgba(255,255,255,0.07);
+border-radius: 50%;
+}
+header::after {
+content: '';
+position: absolute;
+bottom: -30px; left: -20px;
+width: 120px; height: 120px;
+background: rgba(255,255,255,0.05);
+border-radius: 50%;
+}
+header h1 {
+font-family: 'Playfair Display', serif;
+font-size: 1.9rem;
+font-weight: 700;
+letter-spacing: -0.5px;
+position: relative; z-index: 1;
+}
+header p {
+font-size: 0.8rem;
+opacity: 0.85;
+margin-top: 6px;
+font-weight: 300;
+position: relative; z-index: 1;
+}
+
+/* CAL BADGES */
+.cal-strip {
+display: flex;
+gap: 10px;
+padding: 14px 16px;
+background: var(--warm);
+border-bottom: 1px solid var(--border);
+justify-content: center;
+flex-wrap: wrap;
+}
+.cal-badge {
+background: white;
+border-radius: 12px;
+padding: 8px 14px;
+display: flex;
+align-items: center;
+gap: 8px;
+box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+font-size: 0.82rem;
+}
+.cal-badge .icon { font-size: 1.1rem; }
+.cal-badge .name { color: var(--mid); font-weight: 500; }
+.cal-badge .cal { font-weight: 700; color: var(--sage); font-size: 1rem; }
+
+/* TABS */
+.tabs {
+display: flex;
+background: var(--warm);
+border-bottom: 2px solid var(--border);
+overflow-x: auto;
+-webkit-overflow-scrolling: touch;
+scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab-btn {
+flex: none;
+padding: 12px 18px;
+border: none;
+background: none;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.82rem;
+font-weight: 500;
+color: var(--mid);
+cursor: pointer;
+border-bottom: 3px solid transparent;
+margin-bottom: -2px;
+white-space: nowrap;
+transition: all 0.2s;
+}
+.tab-btn.active {
+color: var(--sage);
+border-bottom-color: var(--sage);
+font-weight: 600;
+}
+
+/* MAIN CONTENT */
+.content { padding: 16px; }
+
+/* WEEK CARD */
+.week-label {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 14px;
+}
+.week-label h2 {
+font-family: 'Playfair Display', serif;
+font-size: 1.25rem;
+color: var(--ink);
+}
+.week-label input[type=date] {
+border: 1.5px solid var(--border);
+border-radius: 8px;
+padding: 5px 10px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.78rem;
+color: var(--mid);
+background: white;
+cursor: pointer;
+}
+
+/* DAY ROW */
+.day-card {
+background: white;
+border-radius: 16px;
+margin-bottom: 12px;
+border: 1.5px solid var(--border);
+overflow: hidden;
+transition: box-shadow 0.2s;
+}
+.day-card:focus-within { box-shadow: 0 4px 16px rgba(122,158,126,0.18); }
+.day-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 10px 14px;
+background: var(--sage-pale);
+border-bottom: 1px solid var(--border);
+}
+.day-name {
+font-weight: 700;
+font-size: 0.88rem;
+color: var(--sage);
+text-transform: uppercase;
+letter-spacing: 0.8px;
+}
+.day-cal-display {
+font-size: 0.72rem;
+color: var(--mid);
+background: white;
+border-radius: 20px;
+padding: 2px 8px;
+}
+.day-body { padding: 12px 14px; }
+
+/* MEAL ROW */
+.meal-row {
+display: grid;
+grid-template-columns: 70px 1fr auto;
+gap: 8px;
+align-items: start;
+margin-bottom: 10px;
+}
+.meal-label {
+font-size: 0.72rem;
+font-weight: 600;
+color: var(--mid);
+text-transform: uppercase;
+letter-spacing: 0.5px;
+padding-top: 9px;
+}
+.meal-input-wrap { display: flex; flex-direction: column; gap: 4px; }
+.meal-input {
+width: 100%;
+border: 1.5px solid var(--border);
+border-radius: 10px;
+padding: 8px 10px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.83rem;
+color: var(--ink);
+background: var(--sage-pale);
+outline: none;
+transition: border-color 0.2s;
+resize: none;
+min-height: 36px;
+}
+.meal-input:focus { border-color: var(--sage); background: white; }
+.meal-input::placeholder { color: #aab8ab; }
+.cal-input {
+border: 1.5px solid var(--border);
+border-radius: 10px;
+padding: 5px 8px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.75rem;
+width: 60px;
+color: var(--clay);
+background: var(--clay-light);
+outline: none;
+text-align: center;
+}
+.cal-input:focus { border-color: var(--clay); }
+
+/* CHECKLIST */
+.checklist-col { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; }
+.check-item {
+display: flex;
+align-items: center;
+gap: 6px;
+cursor: pointer;
+}
+.check-item input[type=checkbox] { display: none; }
+.checkmark {
+width: 20px; height: 20px;
+border: 2px solid var(--border);
+border-radius: 6px;
+display: flex; align-items: center; justify-content: center;
+flex-shrink: 0;
+background: white;
+transition: all 0.15s;
+font-size: 11px;
+color: white;
+}
+.check-item input:checked + .checkmark {
+background: var(--tick);
+border-color: var(--tick);
+}
+.check-item input:checked + .checkmark::after { content: '✓'; }
+.check-label {
+font-size: 0.72rem;
+color: var(--mid);
+user-select: none;
+line-height: 1.2;
+}
+.check-item.checked .check-label { text-decoration: line-through; color: #aaa; }
+
+/* DIVIDER */
+.meal-divider {
+border: none;
+border-top: 1px dashed var(--border);
+margin: 6px 0 10px;
+}
+
+/* WATER + NOTES ROW */
+.extras-row {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 8px;
+margin-top: 6px;
+}
+.extra-box {
+background: var(--sage-pale);
+border-radius: 10px;
+padding: 8px 10px;
+}
+.extra-box label {
+font-size: 0.68rem;
+font-weight: 700;
+color: var(--sage);
+text-transform: uppercase;
+letter-spacing: 0.5px;
+display: block;
+margin-bottom: 4px;
+}
+.extra-box input, .extra-box textarea {
+width: 100%;
+background: none;
+border: none;
+outline: none;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.8rem;
+color: var(--ink);
+resize: none;
+}
+
+/* SECTION HEADER */
+.section-title {
+font-family: 'Playfair Display', serif;
+font-size: 1.1rem;
+color: var(--ink);
+margin-bottom: 12px;
+display: flex;
+align-items: center;
+gap: 8px;
+}
+.section-title span { font-size: 1.3rem; }
+
+/* MEAL PREP SAMPLE */
+.prep-intro {
+background: linear-gradient(135deg, var(--sage-pale), var(--warm));
+border-radius: 14px;
+padding: 14px 16px;
+margin-bottom: 16px;
+border: 1.5px solid var(--border);
+font-size: 0.82rem;
+color: var(--mid);
+line-height: 1.6;
+}
+.prep-intro strong { color: var(--ink); }
+
+.prep-day {
+background: white;
+border-radius: 14px;
+margin-bottom: 10px;
+border: 1.5px solid var(--border);
+overflow: hidden;
+}
+.prep-day-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 10px 14px;
+background: var(--sage-pale);
+cursor: pointer;
+user-select: none;
+}
+.prep-day-header .day-name { font-size: 0.85rem; }
+.prep-day-header .cal-pills {
+display: flex; gap: 6px;
+}
+.pill {
+font-size: 0.7rem;
+padding: 2px 8px;
+border-radius: 20px;
+font-weight: 600;
+}
+.pill.her { background: #fde8f0; color: #c2486b; }
+.pill.him { background: #e8f0fd; color: #4866c2; }
+
+.prep-meals { padding: 12px 14px; }
+.prep-meal-item {
+display: flex;
+gap: 10px;
+margin-bottom: 10px;
+align-items: flex-start;
+}
+.prep-meal-icon {
+width: 32px; height: 32px;
+border-radius: 8px;
+background: var(--sage-pale);
+display: flex; align-items: center; justify-content: center;
+font-size: 1rem;
+flex-shrink: 0;
+}
+.prep-meal-text h4 {
+font-size: 0.85rem;
+font-weight: 600;
+color: var(--ink);
+margin-bottom: 2px;
+}
+.prep-meal-text p {
+font-size: 0.75rem;
+color: var(--mid);
+line-height: 1.4;
+}
+.prep-meal-cals {
+margin-left: auto;
+display: flex;
+flex-direction: column;
+gap: 3px;
+text-align: right;
+flex-shrink: 0;
+}
+.prep-meal-cals span {
+font-size: 0.68rem;
+font-weight: 600;
+padding: 1px 6px;
+border-radius: 10px;
+}
+.prep-meal-cals .her { background: #fde8f0; color: #c2486b; }
+.prep-meal-cals .him { background: #e8f0fd; color: #4866c2; }
+
+.prep-divider { border: none; border-top: 1px dashed var(--border); margin: 6px 0; }
+
+.prep-tip {
+background: linear-gradient(135deg, #fff8e8, #fff3d4);
+border: 1.5px solid #f0dc9a;
+border-radius: 12px;
+padding: 12px 14px;
+margin-bottom: 10px;
+font-size: 0.8rem;
+color: #7a5f20;
+line-height: 1.5;
+}
+.prep-tip strong { display: block; margin-bottom: 4px; font-size: 0.82rem; }
+
+/* TIPS TAB */
+.tip-card {
+background: white;
+border-radius: 14px;
+padding: 14px 16px;
+margin-bottom: 10px;
+border: 1.5px solid var(--border);
+}
+.tip-card h3 {
+font-weight: 700;
+font-size: 0.9rem;
+color: var(--ink);
+margin-bottom: 8px;
+display: flex;
+align-items: center;
+gap: 6px;
+}
+.tip-card ul {
+padding-left: 16px;
+font-size: 0.8rem;
+color: var(--mid);
+line-height: 1.8;
+}
+
+/* HIDDEN */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* SAVE BTN */
+.save-btn {
+width: 100%;
+padding: 14px;
+background: linear-gradient(135deg, #3d6b42, #5a8f60);
+color: white;
+border: none;
+border-radius: 12px;
+font-family: 'DM Sans', sans-serif;
+font-size: 0.9rem;
+font-weight: 600;
+cursor: pointer;
+margin-top: 12px;
+letter-spacing: 0.3px;
+transition: opacity 0.2s;
+}
+.save-btn:active { opacity: 0.85; }
+
+.saved-toast {
+display: none;
+background: var(--tick);
+color: white;
+border-radius: 10px;
+padding: 10px 16px;
+text-align: center;
+font-size: 0.85rem;
+margin-top: 10px;
+}
+
+/* TOTAL BAR */
+.total-bar {
+background: var(--warm);
+border-top: 1.5px solid var(--border);
+padding: 8px 14px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+font-size: 0.78rem;
+color: var(--mid);
+}
+.total-bar .total-cal {
+font-weight: 700;
+font-size: 0.88rem;
+color: var(--sage);
+}
+.total-bar .over { color: var(--clay); }
+
+.arrow { transition: transform 0.2s; }
+.collapsed .arrow { transform: rotate(-90deg); }
+.collapsed .prep-meals { display: none; }
+</style>
+
+</head>
+<body>
+
+<header>
+  <h1>🌿 Weekly Meal Planner</h1>
+  <p>Couple's Weight Loss Journey · Goal: –5 kg each</p>
+</header>
+
+<div class="cal-strip">
+  <div class="cal-badge">
+    <span class="icon">👩</span>
+    <span class="name">Her</span>
+    <span class="cal">1,300 kcal</span>
+  </div>
+  <div class="cal-badge">
+    <span class="icon">👨</span>
+    <span class="name">Him</span>
+    <span class="cal">1,650 kcal</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('planner')">📅 My Planner</button>
+  <button class="tab-btn" onclick="showTab('mealprep')">🥗 Sample Week</button>
+  <button class="tab-btn" onclick="showTab('tips')">💡 Tips</button>
+</div>
+
+<!-- PLANNER TAB -->
+
+<div id="tab-planner" class="tab-panel active">
+  <div class="content">
+    <div class="week-label">
+      <h2>This Week</h2>
+      <input type="date" id="weekStart" onchange="updateWeekDates()">
+    </div>
+    <div id="days-container"></div>
+    <button class="save-btn" onclick="saveData()">💾 Save My Plan</button>
+    <div class="saved-toast" id="savedToast">✅ Plan saved to your device!</div>
+  </div>
+</div>
+
+<!-- MEAL PREP SAMPLE TAB -->
+
+<div id="tab-mealprep" class="tab-panel">
+  <div class="content">
+    <p class="section-title"><span>🥗</span> Sample Week Meal Prep</p>
+    <div class="prep-intro">
+      <strong>Her: 1,300 kcal/day</strong> &nbsp;|&nbsp; <strong>Him: 1,650 kcal/day</strong><br>
+      His portions are ~25% larger. Same recipes, just scale his serving. 🍽️
+    </div>
+
+    <div class="prep-tip">
+      <strong>🛒 Batch Prep on Sunday (saves time all week!)</strong>
+      Cook a big pot of rice/quinoa · Boil eggs · Grill chicken breast · Chop veggies · Portion into containers.
+    </div>
+
+    <!-- Days -->
+    <div id="prep-days"></div>
+  </div>
+</div>
+
+<!-- TIPS TAB -->
+
+<div id="tab-tips" class="tab-panel">
+  <div class="content">
+    <p class="section-title"><span>💡</span> Your Guide</p>
+
+    <div class="tip-card">
+      <h3>👨 Why 1,650 kcal for him?</h3>
+      <ul>
+        <li>Height 5'6" (168cm), Weight 83kg</li>
+        <li>BMR ≈ 1,850 kcal (Mifflin-St Jeor)</li>
+        <li>At moderate activity: ~2,300 kcal/day</li>
+        <li>500–600 kcal deficit → ~0.5kg loss/week</li>
+        <li>At 1,650 kcal → lose ~5kg in 10–12 weeks</li>
+      </ul>
+    </div>
+
+    <div class="tip-card">
+      <h3>👩 Her: 1,300 kcal plan</h3>
+      <ul>
+        <li>Breakfast: 250–300 kcal</li>
+        <li>Lunch: 350–400 kcal</li>
+        <li>Dinner: 400–450 kcal</li>
+        <li>Snack: 100–150 kcal</li>
+        <li>Aim for 100g+ protein daily to preserve muscle</li>
+      </ul>
+    </div>
+
+    <div class="tip-card">
+      <h3>🥦 Eat More of These</h3>
+      <ul>
+        <li>Lean protein: chicken, fish, eggs, tofu, lentils</li>
+        <li>Non-starchy veg: broccoli, spinach, zucchini, cucumber</li>
+        <li>High-volume, low-cal: soups, salads, plain yogurt</li>
+        <li>Fiber: oats, legumes (keeps you full!)</li>
+      </ul>
+    </div>
+
+    <div class="tip-card">
+      <h3>🚫 Reduce These</h3>
+      <ul>
+        <li>Sugary drinks, juices, fancy coffees</li>
+        <li>Fried food & takeaway</li>
+        <li>White bread, pastries, sweets</li>
+        <li>Large portions of rice/pasta</li>
+        <li>Alcohol (empty calories!)</li>
+      </ul>
+    </div>
+
+    <div class="tip-card">
+      <h3>💧 Daily Essentials</h3>
+      <ul>
+        <li>Drink 2–2.5L water daily</li>
+        <li>Move at least 30 min (walk counts!)</li>
+        <li>Sleep 7–8 hours (affects hunger hormones)</li>
+        <li>Don't skip meals — it causes overeating later</li>
+        <li>Weigh yourselves weekly, same time, same day</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const MEALS = ['Breakfast','Lunch','Dinner','Snack'];
+const ESSENTIALS = ['💧 Water 2L','🥗 Veggies','🏃 Exercise','💊 Vitamins','😴 Sleep 7h+'];
+const HER_CAL = 1300;
+
+const MEAL_ICONS = { Breakfast:'🌅', Lunch:'☀️', Dinner:'🌙', Snack:'🍎' };
+
+// SAMPLE MEAL PREP DATA
+const SAMPLE_WEEK = [
+  {
+    day: 'Monday',
+    meals: [
+      { type: 'Breakfast', icon: '🌅', name: 'Oats with Berries & Honey', desc: 'Rolled oats, mixed berries, 1 tsp honey, skim milk', her: 280, him: 350 },
+      { type: 'Lunch', icon: '☀️', name: 'Grilled Chicken Salad', desc: 'Chicken breast, mixed greens, cucumber, tomato, olive oil dressing', her: 370, him: 460 },
+      { type: 'Dinner', icon: '🌙', name: 'Baked Salmon + Steamed Broccoli', desc: 'Salmon fillet, broccoli, 1/2 cup brown rice', her: 420, him: 530 },
+      { type: 'Snack', icon: '🍎', name: 'Greek Yogurt', desc: '150g low-fat Greek yogurt + 1 tsp honey', her: 120, him: 150 },
+    ]
+  },
+  {
+    day: 'Tuesday',
+    meals: [
+      { type: 'Breakfast', icon: '🌅', name: 'Scrambled Eggs on Toast', desc: '2 eggs scrambled, 1 slice wholegrain toast, cherry tomatoes', her: 290, him: 370 },
+      { type: 'Lunch', icon: '☀️', name: 'Lentil Soup + Bread', desc: 'Red lentil soup, 1/2 slice wholegrain bread', her: 360, him: 450 },
+      { type: 'Dinner', icon: '🌙', name: 'Chicken Stir-Fry', desc: 'Chicken, bell peppers, broccoli, soy sauce, 1/2 cup jasmine rice', her: 430, him: 540 },
+      { type: 'Snack', icon: '🍎', name: 'Apple + Almonds', desc: '1 medium apple, 10 almonds', her: 130, him: 160 },
+    ]
+  },
+  {
+    day: 'Wednesday',
+    meals: [
+      { type: 'Breakfast', icon: '🌅', name: 'Smoothie Bowl', desc: 'Frozen banana, spinach, almond milk, topped with granola (2 tbsp)', her: 280, him: 360 },
+      { type: 'Lunch', icon: '☀️', name: 'Tuna Wrap', desc: 'Canned tuna, light mayo, lettuce, wholegrain wrap', her: 350, him: 440 },
+      { type: 'Dinner', icon: '🌙', name: 'Veggie Pasta', desc: 'Wholegrain pasta (small), zucchini, tomato sauce, parmesan (1 tbsp)', her: 420, him: 530 },
+      { type: 'Snack', icon: '🍎', name: 'Rice Cake + Peanut Butter', desc: '2 rice cakes, 1 tsp peanut butter', her: 120, him: 150 },
+    ]
+  },
+  {
+    day: 'Thursday',
+    meals: [
+      { type: 'Breakfast', icon: '🌅', name: 'Overnight Oats', desc: 'Oats soaked in yogurt, chia seeds, sliced banana (prepared night before)', her: 290, him: 370 },
+      { type: 'Lunch', icon: '☀️', name: 'Quinoa Buddha Bowl', desc: 'Quinoa, roasted veggies, chickpeas, tahini dressing', her: 380, him: 470 },
+      { type: 'Dinner', icon: '🌙', name: 'Baked Chicken Thighs + Salad', desc: 'Skinless chicken thigh, large green salad, olive oil & lemon', her: 400, him: 510 },
+      { type: 'Snack', icon: '🍎', name: 'Cottage Cheese', desc: '100g low-fat cottage cheese + cucumber slices', her: 110, him: 140 },
+    ]
+  },
+  {
+    day: 'Friday',
+    meals: [
+      { type: 'Breakfast', icon: '🌅', name: 'Avocado Toast + Egg', desc: '1/4 avocado on wholegrain toast, 1 poached egg', her: 300, him: 380 },
+      { type: 'Lunch', icon: '☀️', name: 'Veggie Soup + Crackers', desc: 'Chunky vegetable soup, 4 wholegrain crackers', her: 340, him: 430 },
+      { type: 'Dinner', icon: '🌙', name: 'Shrimp & Zucchini Noodles', desc: 'Prawns, zucchini noodles, garlic, olive oil, cherry tomatoes', her: 410, him: 520 },
+      { type: 'Snack', icon: '🍎', name: 'Mixed Fruit', desc: 'Small bowl of mixed seasonal fruit', her: 100, him: 130 },
+    ]
+  },
+  {
+    day: 'Saturday',
+    meals: [
+      { type: 'Breakfast', icon: '🌅', name: 'Veggie Omelette', desc: '3-egg omelette with spinach, mushrooms, onion, low-fat cheese', her: 310, him: 390 },
+      { type: 'Lunch', icon: '☀️', name: 'Chicken Rice Bowl', desc: 'Grilled chicken, 1/2 cup brown rice, steamed bok choy', her: 380, him: 480 },
+      { type: 'Dinner', icon: '🌙', name: 'Baked Fish Tacos', desc: 'White fish, corn tortillas (2), cabbage slaw, lime', her: 400, him: 500 },
+      { type: 'Snack', icon: '🍎', name: 'Hummus + Veggie Sticks', desc: '3 tbsp hummus, carrot & celery sticks', her: 120, him: 150 },
+    ]
+  },
+  {
+    day: 'Sunday',
+    meals: [
+      { type: 'Breakfast', icon: '🌅', name: 'Banana Pancakes', desc: '2-ingredient pancakes (banana + egg), drizzle of honey', her: 260, him: 340 },
+      { type: 'Lunch', icon: '☀️', name: 'Big Greek Salad', desc: 'Tomato, cucumber, olives (5), feta (30g), lettuce, olive oil', her: 340, him: 430 },
+      { type: 'Dinner', icon: '🌙', name: 'Slow Cooker Chicken Curry', desc: 'Chicken breast, light coconut milk, veggies, 1/2 cup rice', her: 430, him: 540 },
+      { type: 'Snack', icon: '🍎', name: 'Dark Chocolate', desc: '2 squares (20g) dark chocolate 70%+', her: 110, him: 130 },
+    ]
+  }
+];
+
+// ---- BUILD PLANNER ----
+function buildPlanner() {
+  const container = document.getElementById('days-container');
+  container.innerHTML = '';
+  const saved = JSON.parse(localStorage.getItem('mealplan') || '{}');
+
+  DAYS.forEach((day, di) => {
+    const dayData = saved[day] || {};
+    const card = document.createElement('div');
+    card.className = 'day-card';
+    card.id = `day-${di}`;
+
+    let mealRows = MEALS.map(meal => {
+      const savedMeal = dayData[meal] || {};
+      return `
+        <div class="meal-row">
+          <div class="meal-label">${meal}</div>
+          <div class="meal-input-wrap">
+            <textarea class="meal-input" rows="1"
+              id="${day}-${meal}-food"
+              placeholder="e.g. Oats with berries..."
+              oninput="autoResize(this); updateTotal('${day}')"
+            >${savedMeal.food || ''}</textarea>
+            <input class="cal-input" type="number" placeholder="kcal"
+              id="${day}-${meal}-cal"
+              value="${savedMeal.cal || ''}"
+              oninput="updateTotal('${day}')"
+            >
+          </div>
+          <div class="checklist-col">
+            ${ESSENTIALS.map((e, ei) => `
+              <label class="check-item ${(dayData.checks||[])[ei] ? 'checked' : ''}"
+                id="${day}-check-label-${ei}">
+                <input type="checkbox" id="${day}-check-${ei}"
+                  ${(dayData.checks||[])[ei] ? 'checked' : ''}
+                  onchange="toggleCheck('${day}', ${ei})">
+                <span class="checkmark">${(dayData.checks||[])[ei] ? '✓' : ''}</span>
+                <span class="check-label">${e}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+        ${meal !== 'Snack' ? '<hr class="meal-divider">' : ''}
+      `;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="day-header">
+        <span class="day-name">${day}</span>
+        <span class="day-cal-display" id="${day}-total-display">0 / ${HER_CAL} kcal</span>
+      </div>
+      <div class="day-body">
+        ${mealRows}
+        <div class="extras-row">
+          <div class="extra-box">
+            <label>💧 Water (glasses)</label>
+            <input type="number" min="0" max="20" placeholder="0"
+              id="${day}-water" value="${dayData.water || ''}">
+          </div>
+          <div class="extra-box">
+            <label>📝 Notes</label>
+            <textarea rows="1" placeholder="How you felt..."
+              id="${day}-notes">${dayData.notes || ''}</textarea>
+          </div>
+        </div>
+      </div>
+      <div class="total-bar">
+        <span>Daily total</span>
+        <span class="total-cal" id="${day}-total-label">0 kcal</span>
+      </div>
+    `;
+    container.appendChild(card);
+    updateTotal(day);
+  });
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function updateTotal(day) {
+  let total = 0;
+  MEALS.forEach(meal => {
+    const v = parseInt(document.getElementById(`${day}-${meal}-cal`)?.value) || 0;
+    total += v;
+  });
+  const label = document.getElementById(`${day}-total-label`);
+  const display = document.getElementById(`${day}-total-display`);
+  if (label) {
+    label.textContent = total + ' kcal';
+    label.className = 'total-cal' + (total > HER_CAL ? ' over' : '');
+  }
+  if (display) {
+    display.textContent = total + ' / ' + HER_CAL + ' kcal';
+    display.style.color = total > HER_CAL ? 'var(--clay)' : 'var(--sage)';
+  }
+}
+
+function toggleCheck(day, idx) {
+  const cb = document.getElementById(`${day}-check-${idx}`);
+  const label = document.getElementById(`${day}-check-label-${idx}`);
+  const mark = label.querySelector('.checkmark');
+  if (cb.checked) {
+    label.classList.add('checked');
+    mark.textContent = '✓';
+  } else {
+    label.classList.remove('checked');
+    mark.textContent = '';
+  }
+}
+
+function saveData() {
+  const plan = {};
+  DAYS.forEach(day => {
+    const meals = {};
+    MEALS.forEach(meal => {
+      meals[meal] = {
+        food: document.getElementById(`${day}-${meal}-food`)?.value || '',
+        cal: document.getElementById(`${day}-${meal}-cal`)?.value || ''
+      };
+    });
+    const checks = ESSENTIALS.map((_, ei) =>
+      document.getElementById(`${day}-check-${ei}`)?.checked || false
+    );
+    plan[day] = {
+      ...meals,
+      checks,
+      water: document.getElementById(`${day}-water`)?.value || '',
+      notes: document.getElementById(`${day}-notes`)?.value || ''
+    };
+  });
+  localStorage.setItem('mealplan', JSON.stringify(plan));
+  const toast = document.getElementById('savedToast');
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 2500);
+}
+
+function updateWeekDates() {
+  const val = document.getElementById('weekStart').value;
+  if (!val) return;
+  const start = new Date(val);
+  DAYS.forEach((day, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const label = document.querySelector(`#day-${i} .day-name`);
+    if (label) label.textContent = day + ' ' + d.getDate() + '/' + (d.getMonth()+1);
+  });
+}
+
+// –– BUILD MEAL PREP ––
+function buildMealPrep() {
+  const container = document.getElementById('prep-days');
+  container.innerHTML = '';
+  SAMPLE_WEEK.forEach((dayData, di) => {
+    const totalHer = dayData.meals.reduce((s, m) => s + m.her, 0);
+    const totalHim = dayData.meals.reduce((s, m) => s + m.him, 0);
+    const div = document.createElement('div');
+    div.className = 'prep-day';
+    div.innerHTML = `
+      <div class="prep-day-header" onclick="toggleDay(this)">
+        <span class="day-name">${dayData.day}</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="pill her">👩 ${totalHer}</span>
+          <span class="pill him">👨 ${totalHim}</span>
+          <span class="arrow">▾</span>
+        </div>
+      </div>
+      <div class="prep-meals">
+        ${dayData.meals.map(m => `
+          <div class="prep-meal-item">
+            <div class="prep-meal-icon">${m.icon}</div>
+            <div class="prep-meal-text">
+              <h4>${m.type}: ${m.name}</h4>
+              <p>${m.desc}</p>
+            </div>
+            <div class="prep-meal-cals">
+              <span class="her">👩 ${m.her}</span>
+              <span class="him">👨 ${m.him}</span>
+            </div>
+          </div>
+          <hr class="prep-divider">
+        `).join('')}
+        <div style="display:flex;justify-content:space-between;padding-top:4px">
+          <span style="font-size:0.75rem;color:var(--mid);font-weight:600">Day Total</span>
+          <div style="display:flex;gap:8px">
+            <span class="pill her">👩 ${totalHer} kcal</span>
+            <span class="pill him">👨 ${totalHim} kcal</span>
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function toggleDay(header) {
+  header.parentElement.classList.toggle('collapsed');
+}
+
+// –– TABS ––
+function showTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// –– INIT ––
+buildPlanner();
+buildMealPrep();
+
+// Set today's date
+const today = new Date();
+const monday = new Date(today);
+monday.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1));
+const y = monday.getFullYear();
+const m = String(monday.getMonth()+1).padStart(2,'0');
+const d = String(monday.getDate()).padStart(2,'0');
+document.getElementById('weekStart').value = `${y}-${m}-${d}`;
+updateWeekDates();
+</script>
+
+</body>
+</html>
