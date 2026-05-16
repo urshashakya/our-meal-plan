@@ -550,9 +550,9 @@ color: var(--sage);
 </div>
 
 <div class="tabs">
-  <button class="tab-btn active" onclick="showTab('planner')">📅 My Planner</button>
-  <button class="tab-btn" onclick="showTab('mealprep')">🥗 Sample Week</button>
-  <button class="tab-btn" onclick="showTab('tips')">💡 Tips</button>
+  <button class="tab-btn active" onclick="showTab(event, 'planner')">📅 My Planner</button>
+  <button class="tab-btn" onclick="showTab(event, 'mealprep')">🥗 Sample Week</button>
+  <button class="tab-btn" onclick="showTab(event, 'tips')">💡 Tips</button>
 </div>
 
 <!-- PLANNER TAB -->
@@ -651,11 +651,16 @@ color: var(--sage);
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 const SUPABASE_URL = 'https://zobmatdffodiaiddqxfb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvYm1hdGRmZm9kaWFpZGRxeGZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjM2NjIsImV4cCI6MjA5NDQ5OTY2Mn0.9aTXge-bl6PCve_0-DdCMktT_4T203uuvfmnbnyplhU';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let supabase = null;
+try {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (e) {
+  console.warn('Supabase failed to initialize:', e);
+}
 
 let currentUser = null;
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -734,6 +739,11 @@ const SAMPLE_WEEK = [
 
 // ---- AUTH ----
 async function initAuth() {
+  if (!supabase) {
+    document.getElementById('authStatus').textContent = 'Not signed in';
+    document.getElementById('authBtn').textContent = 'Sign In';
+    return;
+  }
   const { data: { user } } = await supabase.auth.getUser();
   currentUser = user;
   updateAuthUI();
@@ -755,6 +765,10 @@ function updateAuthUI() {
 }
 
 async function handleAuth() {
+  if (!supabase) {
+    alert('Sign in is not available. Please check your connection.');
+    return;
+  }
   if (currentUser) {
     await supabase.auth.signOut();
     currentUser = null;
@@ -1040,11 +1054,11 @@ function toggleDay(header) {
 }
 
 // –– TABS ––
-function showTab(name) {
+function showTab(e, name) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
-  event.target.classList.add('active');
+  e.currentTarget.classList.add('active');
 }
 
 // –– INIT ––
