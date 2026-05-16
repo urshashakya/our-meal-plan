@@ -30,6 +30,30 @@
     padding-bottom: 40px;
   }
 
+/* AUTH BAR */
+.auth-bar {
+  background: var(--sage);
+  color: white;
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+.auth-bar button {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.4);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.2s;
+}
+.auth-bar button:hover {
+  background: rgba(255,255,255,0.3);
+}
+
 /* HEADER */
 header {
 background: linear-gradient(135deg, #3d6b42 0%, #5a8f60 60%, #7ab87f 100%);
@@ -493,10 +517,19 @@ color: var(--sage);
 .arrow { transition: transform 0.2s; }
 .collapsed .arrow { transform: rotate(-90deg); }
 .collapsed .prep-meals { display: none; }
+
+.loading { opacity: 0.6; pointer-events: none; }
 </style>
 
 </head>
 <body>
+
+<div class="auth-bar">
+  <span id="authStatus">Loading...</span>
+  <div>
+    <button onclick="handleAuth()" id="authBtn">Sign In</button>
+  </div>
+</div>
 
 <header>
   <h1>🌿 Weekly Meal Planner</h1>
@@ -618,10 +651,16 @@ color: var(--sage);
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+const SUPABASE_URL = 'https://zobmatdffodiaiddqxfb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvYm1hdGRmZm9kaWFpZGRxeGZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjM2NjIsImV4cCI6MjA5NDQ5OTY2Mn0.9aTXge-bl6PCve_0-DdCMktT_4T203uuvfmnbnyplhU';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const MEALS = ['Breakfast','Lunch','Dinner','Snack'];
-const ESSENTIALS = [' Methi or ACV','Protein 100gm','🏃 Exercise','Tusi in dinner','😴 Sleep 7h+'];
+const ESSENTIALS = ['💧 Methi or ACV','Protein 100gm','🏃 Exercise','💊 Tusi in dinner','😴 Sleep 7h+'];
 const HER_CAL = 1300;
 
 const MEAL_ICONS = { Breakfast:'🌅', Lunch:'☀️', Dinner:'🌙', Snack:'🍎' };
@@ -692,6 +731,45 @@ const SAMPLE_WEEK = [
     ]
   }
 ];
+
+// ---- AUTH ----
+async function initAuth() {
+  const { data: { user } } = await supabase.auth.getUser();
+  currentUser = user;
+  updateAuthUI();
+  if (user) {
+    await loadData();
+  }
+}
+
+function updateAuthUI() {
+  const statusEl = document.getElementById('authStatus');
+  const btnEl = document.getElementById('authBtn');
+  if (currentUser) {
+    statusEl.textContent = `Signed in as: ${currentUser.email}`;
+    btnEl.textContent = 'Sign Out';
+  } else {
+    statusEl.textContent = 'Not signed in';
+    btnEl.textContent = 'Sign In';
+  }
+}
+
+async function handleAuth() {
+  if (currentUser) {
+    await supabase.auth.signOut();
+    currentUser = null;
+    updateAuthUI();
+  } else {
+    const email = prompt('Enter your email:');
+    if (!email) return;
+    const { error } = await supabase.auth.signInWithOtp({ email });
+    if (error) {
+      alert('Error: ' + error.message);
+    } else {
+      alert('Check your email for the login link!');
+    }
+  }
+}
 
 // ---- BUILD PLANNER ----
 function buildPlanner() {
@@ -805,7 +883,7 @@ function toggleCheck(day, idx) {
   }
 }
 
-function saveData() {
+async function saveData() {
   const plan = {};
   DAYS.forEach(day => {
     const meals = {};
@@ -825,10 +903,78 @@ function saveData() {
       notes: document.getElementById(`${day}-notes`)?.value || ''
     };
   });
+
+  // Save to localStorage first
   localStorage.setItem('mealplan', JSON.stringify(plan));
+
+  // If user is signed in, save to Supabase
+  if (currentUser) {
+    const saveBtn = document.querySelector('.save-btn');
+    saveBtn.classList.add('loading');
+    
+    try {
+      for (const day of DAYS) {
+        const dayData = plan[day];
+        const { error } = await supabase
+          .from('meal_plans')
+          .upsert({
+            user_id: currentUser.id,
+            day: day,
+            breakfast_food: dayData.Breakfast.food,
+            breakfast_cal: parseInt(dayData.Breakfast.cal) || 0,
+            lunch_food: dayData.Lunch.food,
+            lunch_cal: parseInt(dayData.Lunch.cal) || 0,
+            dinner_food: dayData.Dinner.food,
+            dinner_cal: parseInt(dayData.Dinner.cal) || 0,
+            snack_food: dayData.Snack.food,
+            snack_cal: parseInt(dayData.Snack.cal) || 0,
+            checks: dayData.checks,
+            water: parseInt(dayData.water) || 0,
+            notes: dayData.notes,
+          });
+        if (error) throw error;
+      }
+    } catch (err) {
+      console.error('Error syncing to Supabase:', err);
+    } finally {
+      saveBtn.classList.remove('loading');
+    }
+  }
+
   const toast = document.getElementById('savedToast');
   toast.style.display = 'block';
   setTimeout(() => toast.style.display = 'none', 2500);
+}
+
+async function loadData() {
+  if (!currentUser) return;
+
+  try {
+    const { data, error } = await supabase
+      .from('meal_plans')
+      .select('*')
+      .eq('user_id', currentUser.id);
+
+    if (error) throw error;
+
+    const saved = {};
+    data.forEach(row => {
+      saved[row.day] = {
+        Breakfast: { food: row.breakfast_food || '', cal: row.breakfast_cal || '' },
+        Lunch: { food: row.lunch_food || '', cal: row.lunch_cal || '' },
+        Dinner: { food: row.dinner_food || '', cal: row.dinner_cal || '' },
+        Snack: { food: row.snack_food || '', cal: row.snack_cal || '' },
+        checks: row.checks || [],
+        water: row.water || '',
+        notes: row.notes || '',
+      };
+    });
+
+    localStorage.setItem('mealplan', JSON.stringify(saved));
+    buildPlanner();
+  } catch (err) {
+    console.error('Error loading from Supabase:', err);
+  }
 }
 
 function updateWeekDates() {
@@ -914,6 +1060,9 @@ const m = String(monday.getMonth()+1).padStart(2,'0');
 const d = String(monday.getDate()).padStart(2,'0');
 document.getElementById('weekStart').value = `${y}-${m}-${d}`;
 updateWeekDates();
+
+// Init auth
+initAuth();
 </script>
 
 </body>
